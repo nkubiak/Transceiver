@@ -1,36 +1,44 @@
 package pl.poznan.put.kubiaklajlo.transceiver;
 
+import android.app.Activity;
+import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.hardware.usb.UsbDevice;
+import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Looper;
+import android.preference.PreferenceManager;
 import android.util.Log;
+import android.widget.EditText;
 import android.widget.Toast;
 
-import tw.com.prolific.driver.pl2303.PL2303Driver;
+import com.felhr.usbserial.UsbSerialDevice;
+import com.felhr.usbserial.UsbSerialInterface;
+
+import java.util.HashMap;
+import java.util.Map;
 
 public class TransceiverService extends Service {
 
-    private PL2303Driver uart;
+    SharedPreferences.Editor editor;
 
-    String TAG = "PL2303HXD_uart";
+    String TAG = "PL2303HXD_uart_service";
+    private static final String ACTION_USB_PERMISSION = "pl.poznan.put.transceiver.transceiver.USB_PERMISSION";
 
     private String initializeSequention = "15" + '\r' + "8000" + '\r' + '\r' + "53" + '\r';
-
-    private PL2303Driver.BaudRate mBaudrate = PL2303Driver.BaudRate.B9600;
-    private PL2303Driver.DataBits mDataBits = PL2303Driver.DataBits.D8;
-    private PL2303Driver.Parity mParity = PL2303Driver.Parity.NONE;
-    private PL2303Driver.StopBits mStopBits = PL2303Driver.StopBits.S1;
-    private PL2303Driver.FlowControl mFlowControl = PL2303Driver.FlowControl.OFF;
-    private static final String ACTION_USB_PERMISSION = "pl.poznan.put.transceiver.transceiver.USB_PERMISSION";
+    UsbSerialDevice uart;
+    boolean uartInitialized = false;
 
     @Override
     public void onStart(Intent intent, int startId) {
         super.onStart(intent, startId);
 
-        uart = new PL2303Driver((UsbManager)getSystemService(Context.USB_SERVICE),
-                getApplicationContext(), ACTION_USB_PERMISSION);
+        editor = getSharedPreferences("txt", Context.MODE_PRIVATE).edit();
 
         initialization();
         writeDataToSerial();
@@ -39,42 +47,99 @@ public class TransceiverService extends Service {
 
     private void initialization()
     {
-        if (!uart.InitByBaudRate(mBaudrate,700)) { // INITIALIZATION HERE!!
-            if(!uart.PL2303Device_IsHasPermission()) {
-                Toast.makeText(this, "cannot open, maybe no permission", Toast.LENGTH_SHORT).show();
-            }
+        UsbManager usbManager = (UsbManager)getSystemService(Context.USB_SERVICE);
+        UsbDevice device = null;
+        UsbDeviceConnection mConnection = null;
+        HashMap<String, UsbDevice> usbDevices = usbManager.getDeviceList();
+        if(!usbDevices.isEmpty())
+        {
+            boolean keep = true;
+            for(Map.Entry<String, UsbDevice> entry : usbDevices.entrySet())
+            {
+                device = entry.getValue();
+                int deviceVID = device.getVendorId();
+                int devicePID = device.getProductId();
+                if(deviceVID != 0x1d6b || (devicePID != 0x0001 || devicePID != 0x0002 || devicePID != 0x0003))
+                {
+                    // We are supposing here there is only one device connected and it is our serial device
+                    PendingIntent mPendingIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
+                    usbManager.requestPermission(device, mPendingIntent);
 
-            if(uart.PL2303Device_IsHasPermission() && (!uart.PL2303Device_IsSupportChip())) {
-                Toast.makeText(this, "cannot open, maybe this chip has no support, please use PL2303HXD / RA / EA chip.", Toast.LENGTH_SHORT).show();
-            }
-        } else {
+                    mConnection = usbManager.openDevice(device);
+                    keep = false;
+                }else
+                {
+                    mConnection = null;
+                    device = null;
+                }
 
-            Toast.makeText(this, "connected : " , Toast.LENGTH_SHORT).show();
+                if(!keep)
+                    break;
+            }
+        }
+        if(device == null || mConnection == null)
+        {
+            editor.putString("text", "Konwerter UART jest niepodłączony" + '\r');
+            editor.apply();
+            return;
+        }
+
+        uart = UsbSerialDevice.createUsbSerialDevice(device, mConnection);
+
+        if(uart != null)
+        {
+            if(uart.open())
+            {
+                // Devices are opened with default values, Usually 9600,8,1,None,OFF
+                // CDC driver default values 9600,8,1,None,OFF
+                uart.setBaudRate(9600);
+                uart.setDataBits(UsbSerialInterface.DATA_BITS_8);
+                uart.setStopBits(UsbSerialInterface.STOP_BITS_1);
+                uart.setParity(UsbSerialInterface.PARITY_NONE);
+                uart.setFlowControl(UsbSerialInterface.FLOW_CONTROL_OFF);
+                uart.read(mCallback);
+                uartInitialized = true;
+            }else
+            {
+               Log.d(TAG, "Serial port could not be opened, maybe an I/O error or it CDC driver was chosen it does not really fit");
+            }
+        }else
+        {
+            Log.d(TAG, "No driver for given device, even generic CDC driver could not be loaded");
         }
     }
 
     private void writeDataToSerial() {
-
-        Log.d(TAG, "Enter writeDataToSerial");
-
-        if(null==uart)
-            return;
-
-        if(!uart.isConnected())
-            return;
-
-        Log.d(TAG, "PL2303Driver Write 2(" + initializeSequention.length() + ") : " + initializeSequention);
-
-        int res = uart.write(initializeSequention.getBytes(), initializeSequention.length());
-        if( res<0 ) {
-            Log.d(TAG, "setup2: fail to controlTransfer: "+ res);
-            return;
-        }
-
-        Toast.makeText(this, "Write length: " + initializeSequention.length() + " bytes", Toast.LENGTH_SHORT).show();
-
-        Log.d(TAG, "Leave writeDataToSerial");
+        if (!uartInitialized) return;
+        uart.write(initializeSequention.getBytes());
     }
+
+
+    private UsbSerialInterface.UsbReadCallback mCallback = new UsbSerialInterface.UsbReadCallback()
+    {
+        @Override
+        public void onReceivedData(byte[] arg0)
+        {
+            String data;
+            try {
+                data = new String(arg0, "UTF-8");
+            }
+            catch (java.io.UnsupportedEncodingException e)
+            {
+                data = e.toString();
+            }
+            editor.putString("text", data + '\r');
+            editor.putBoolean("refreshed", true);
+            editor.apply();
+            /*try {
+                Thread.sleep(14);
+            }
+            catch (InterruptedException e)
+            {
+                Log.d(TAG, e.toString());
+            }*/
+        }
+    };
 
     public TransceiverService() {
     }
@@ -82,8 +147,7 @@ public class TransceiverService extends Service {
     @Override
     public void onDestroy() {
         super.onDestroy();
-
-        uart.end();
+        if (uart != null) uart.close();
         Log.d(TAG, "Service stopped!");
     }
 

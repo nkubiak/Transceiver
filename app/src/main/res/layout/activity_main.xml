@@ -14,18 +14,27 @@
         android:layout_height="wrap_content"
         android:text="Start Service"
         android:id="@+id/buttonStart"
-        android:layout_centerVertical="true"
-        android:layout_centerHorizontal="true"
-        android:nestedScrollingEnabled="false" />
+        android:nestedScrollingEnabled="false"
+        android:layout_above="@+id/buttonStop"
+        android:layout_centerHorizontal="true" />
 
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Stop Service"
         android:id="@+id/buttonStop"
-        android:layout_below="@+id/buttonStart"
-        android:layout_alignStart="@+id/buttonStart"
-        android:layout_alignParentStart="false"
-        android:layout_alignParentEnd="false"
-        android:layout_alignEnd="@+id/buttonStart" />
+        android:layout_alignParentBottom="true"
+        android:layout_alignStart="@+id/buttonStart" />
+
+    <EditText
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:id="@+id/editText"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentStart="true"
+        android:layout_above="@+id/buttonStart"
+        android:editable="false"
+        android:maxLines="100"
+        android:nestedScrollingEnabled="true" />
 </RelativeLayout>

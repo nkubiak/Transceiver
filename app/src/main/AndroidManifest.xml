@@ -4,6 +4,7 @@
 
     <uses-feature android:name="android.hardware.usb.UsbAccessory" />
     <uses-feature android:name="android.hardware.usb.UsbManager" />
+    <uses-feature android:name="android.hardware.usb.host" />
 
     <application
         android:allowBackup="true"
