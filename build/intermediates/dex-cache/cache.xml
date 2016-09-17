@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<items version="2" >
+
+    <item
+        jar="/home/nkubiak/mgr/Transceiver/app/build/intermediates/exploded-aar/com.android.support/appcompat-v7/22.2.1/jars/classes.jar"
+        jumboMode="true"
+        revision="24.0.1"
+        sha1="4486e953d1f35f8ccab098b1dd67146366d5f731">
+        <dex dex="/home/nkubiak/mgr/Transceiver/app/build/intermediates/pre-dexed/debug/com.android.support-appcompat-v7-22.2.1_b49f327007862137b4f372cb7a559e8d5665ccbc.jar" />
+    </item>
+    <item
+        jar="/home/nkubiak/mgr/Transceiver/app/build/intermediates/exploded-aar/com.android.support/support-v4/22.2.1/jars/classes.jar"
+        jumboMode="true"
+        revision="24.0.1"
+        sha1="f8efd0096475e0daf054267b61544e10dc776503">
+        <dex dex="/home/nkubiak/mgr/Transceiver/app/build/intermediates/pre-dexed/debug/com.android.support-support-v4-22.2.1_13630de86798538c78cc1bc78288ea7bb1ee1d32.jar" />
+    </item>
+    <item
+        jar="/home/nkubiak/mgr/Transceiver/app/build/intermediates/incremental-classes/debug/instant-run-bootstrap.jar"
+        jumboMode="true"
+        revision="24.0.1"
+        sha1="9f51ddd434bbada90dace13e1ba6cac96bcbb120">
+        <dex dex="/home/nkubiak/mgr/Transceiver/app/build/intermediates/pre-dexed/debug/instant-run-bootstrap_40defe2576b900227b7c10182e41fe2e75aee20a.jar" />
+    </item>
+    <item
+        jar="/home/nkubiak/android/sdk/extras/android/m2repository/com/android/support/support-annotations/22.2.1/support-annotations-22.2.1.jar"
+        jumboMode="true"
+        revision="24.0.1"
+        sha1="61a0ff5c29295ec56d7e0bd3d25d95dbf71b4b2b">
+        <dex dex="/home/nkubiak/mgr/Transceiver/app/build/intermediates/pre-dexed/debug/support-annotations-22.2.1_b115b1376c29fc1cc8db5d66c9e7276139f41335.jar" />
+    </item>
+    <item
+        jar="/home/nkubiak/mgr/Transceiver/app/build/intermediates/incremental-runtime-classes/debug/instant-run.jar"
+        jumboMode="true"
+        revision="24.0.1"
+        sha1="f26c97a83182ff3916fc427821ccf14fac18f645">
+        <dex dex="/home/nkubiak/mgr/Transceiver/app/build/intermediates/pre-dexed/debug/instant-run_7d58799a9d04af4b9c349a83a8627e2e47a0f0fc.jar" />
+    </item>
+    <item
+        jar="/home/nkubiak/mgr/Transceiver/app/build/intermediates/exploded-aar/com.android.support/support-v4/22.2.1/jars/libs/internal_impl-22.2.1.jar"
+        jumboMode="true"
+        revision="24.0.1"
+        sha1="c471eaaba13ff64f6e0383d1c30a9cdc9a97efeb">
+        <dex dex="/home/nkubiak/mgr/Transceiver/app/build/intermediates/pre-dexed/debug/internal_impl-22.2.1_6af2486c43f1408f42fff58d9c259e943b0522f2.jar" />
+    </item>
+    <item
+        jar="/home/nkubiak/mgr/Transceiver/app/libs/pl2303driver.jar"
+        jumboMode="true"
+        revision="24.0.1"
+        sha1="3ba27649469c1d71e1a54c0fd66a0d94856df555">
+        <dex dex="/home/nkubiak/mgr/Transceiver/app/build/intermediates/pre-dexed/debug/pl2303driver_a780fbd8a4d7359afc0501fd59400adc351f4c56.jar" />
+    </item>
+
+</items>
