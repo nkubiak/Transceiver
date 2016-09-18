@@ -62,7 +62,8 @@ public class TransceiverService extends Service {
                     usbManager.requestPermission(device, mPendingIntent);
                     mConnection = usbManager.openDevice(device);
                     keep = false;
-                }else
+                }
+                else
                 {
                     mConnection = null;
                     device = null;
@@ -75,6 +76,7 @@ public class TransceiverService extends Service {
         if(device == null || mConnection == null)
         {
             editor.putString("text", "Konwerter UART jest niepodłączony" + '\r');
+            editor.putBoolean("refreshed", true);
             editor.commit();
             return;
         }

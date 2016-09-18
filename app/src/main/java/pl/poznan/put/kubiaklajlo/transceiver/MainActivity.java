@@ -88,6 +88,10 @@ public class MainActivity extends AppCompatActivity {
                 {
                     Log.d(TAG, e.toString());
                 }
+                catch (java.lang.NullPointerException e)
+                {
+                    Log.d(TAG, e.toString());
+                }
             }
         };
 
