@@ -43,7 +43,7 @@ public class MainActivity extends AppCompatActivity {
                 while (working) {
                     final String text = preferences.getString("text", "");
                    try {
-                        Thread.sleep(5);
+                        Thread.sleep(15);
                     }
                     catch (InterruptedException e) {
                         Log.d(TAG, e.toString());
@@ -54,7 +54,7 @@ public class MainActivity extends AppCompatActivity {
                         myActivity.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
-                                preferences.edit().putBoolean("refreshed", false).apply();
+                                preferences.edit().putBoolean("refreshed", false).commit();
                                 EditText.setText(text + EditText.getText());
                             }
                         });
@@ -85,6 +85,10 @@ public class MainActivity extends AppCompatActivity {
                     updateEditTextThread.join();
                 }
                 catch (InterruptedException e)
+                {
+                    Log.d(TAG, e.toString());
+                }
+                catch (java.lang.NullPointerException e)
                 {
                     Log.d(TAG, e.toString());
                 }

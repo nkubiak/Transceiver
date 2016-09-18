@@ -1,6 +1,5 @@
 package pl.poznan.put.kubiaklajlo.transceiver;
 
-import android.app.Activity;
 import android.app.PendingIntent;
 import android.app.Service;
 import android.content.Context;
@@ -9,17 +8,13 @@ import android.content.SharedPreferences;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
-import android.os.Handler;
 import android.os.IBinder;
-import android.os.Looper;
-import android.preference.PreferenceManager;
 import android.util.Log;
-import android.widget.EditText;
-import android.widget.Toast;
 
 import com.felhr.usbserial.UsbSerialDevice;
 import com.felhr.usbserial.UsbSerialInterface;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -30,7 +25,8 @@ public class TransceiverService extends Service {
     String TAG = "PL2303HXD_uart_service";
     private static final String ACTION_USB_PERMISSION = "pl.poznan.put.transceiver.transceiver.USB_PERMISSION";
 
-    private String initializeSequention = "15" + '\r' + "8000" + '\r' + '\r' + "53" + '\r';
+    private String []initializeSequention =  {"15", "\r", "\n", "8000", "\r", "\n", "\r", "53", "\r", "\n"};
+    //private String initializeSequention =  "15" + '\r' + "8000" + '\r' + '\r' + "53" + '\r';
     UsbSerialDevice uart;
     boolean uartInitialized = false;
 
@@ -64,10 +60,10 @@ public class TransceiverService extends Service {
                     // We are supposing here there is only one device connected and it is our serial device
                     PendingIntent mPendingIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
                     usbManager.requestPermission(device, mPendingIntent);
-
                     mConnection = usbManager.openDevice(device);
                     keep = false;
-                }else
+                }
+                else
                 {
                     mConnection = null;
                     device = null;
@@ -80,7 +76,8 @@ public class TransceiverService extends Service {
         if(device == null || mConnection == null)
         {
             editor.putString("text", "Konwerter UART jest niepodłączony" + '\r');
-            editor.apply();
+            editor.putBoolean("refreshed", true);
+            editor.commit();
             return;
         }
 
@@ -111,7 +108,15 @@ public class TransceiverService extends Service {
 
     private void writeDataToSerial() {
         if (!uartInitialized) return;
-        uart.write(initializeSequention.getBytes());
+        for (int i = 0; i < initializeSequention.length; i++ ) {
+            byte[] bytes = initializeSequention[i].getBytes(StandardCharsets.US_ASCII);
+            uart.write(bytes);
+            try {
+                Thread.sleep(200);
+            } catch (InterruptedException e) {
+                Log.d(TAG, e.toString());
+            }
+        }
     }
 
 
@@ -130,14 +135,13 @@ public class TransceiverService extends Service {
             }
             editor.putString("text", data + '\r');
             editor.putBoolean("refreshed", true);
-            editor.apply();
-            /*try {
-                Thread.sleep(14);
-            }
-            catch (InterruptedException e)
-            {
+            editor.commit();
+            //sleep thread!
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
                 Log.d(TAG, e.toString());
-            }*/
+            }
         }
     };
 
