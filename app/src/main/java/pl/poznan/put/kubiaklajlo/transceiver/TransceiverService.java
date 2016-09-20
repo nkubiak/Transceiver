@@ -32,7 +32,7 @@ public class TransceiverService extends Service {
     String TAG = "PL2303HXD_uart_service";
     private static final String ACTION_USB_PERMISSION = "pl.poznan.put.transceiver.transceiver.USB_PERMISSION";
 
-    private String []initializeSequention =  {"15", "\r", "\n", "8000", "\r", "\n", "\r", "53", "\r", "\n"};
+    private String []initializeSequention =  {"25", "\r", "\n", "8000", "\r", "\n", "\r", "53", "\r", "\n"};
     UsbSerialDevice uart;
     boolean uartInitialized = false;
     //
@@ -144,7 +144,9 @@ public class TransceiverService extends Service {
                     // We are supposing here there is only one device connected and it is our serial device
                     PendingIntent UARTPendingIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
                     usbManager.requestPermission(device, UARTPendingIntent);
-                    mConnection = usbManager.openDevice(device);
+                    while(mConnection == null) {
+                        mConnection = usbManager.openDevice(device);
+                    }
                     keep = false;
                 }
                 else
@@ -246,7 +248,11 @@ public class TransceiverService extends Service {
         super.onDestroy();
         if (uart != null) uart.close();
         try {
-            if (outStream != null) outStream.flush();
+            if (outStream != null)
+            {
+                outStream.write("];".getBytes(StandardCharsets.US_ASCII));
+                outStream.flush();
+            }
             if (btSocket != null) btSocket.close();
             if (btAdapter != null) btAdapter.disable();
             editor.putString("text", "Zakończono transmisję" + '\r');
