@@ -40,20 +40,22 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void run() {
                 final SharedPreferences preferences = getSharedPreferences("txt", Context.MODE_PRIVATE);
+                boolean refreshed;
                 while (working) {
                     final String text = preferences.getString("text", "");
-                   try {
-                        Thread.sleep(1000);
+                    try {
+                        Thread.sleep(300);
                     }
                     catch (InterruptedException e) {
                         Log.d(TAG, e.toString());
                     }
-                    boolean tmp = false;
-                    boolean refreshed = preferences.getBoolean("refreshed", tmp);
+                    boolean tmp = true;
+                    refreshed = preferences.getBoolean("refreshed", tmp);
                     if(refreshed) {
                         myActivity.runOnUiThread(new Runnable() {
                             @Override
                             public void run() {
+                                preferences.edit().clear().apply();
                                 preferences.edit().putBoolean("refreshed", false).apply();
                                 EditText.setText(text + EditText.getText());
                             }
