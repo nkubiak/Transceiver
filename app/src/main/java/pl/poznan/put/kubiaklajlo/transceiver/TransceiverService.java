@@ -32,7 +32,7 @@ public class TransceiverService extends Service {
     String TAG = "PL2303HXD_uart_service";
     private static final String ACTION_USB_PERMISSION = "pl.poznan.put.transceiver.transceiver.USB_PERMISSION";
 
-    private String []initializeSequention =  {"25", "\r", "\n", "8000", "\r", "\n", "\r", "53", "\r", "\n"};
+    private String []initializeSequention =  {"25", "\r", "8000", "\r", "3", "\r", "53", "\r"};
     UsbSerialDevice uart;
     boolean uartInitialized = false;
     //
@@ -48,13 +48,14 @@ public class TransceiverService extends Service {
             UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
     // Insert your server's MAC address
-    private static String address = "BC:77:37:2F:54:08";
+    //private static String address = "BC:77:37:2F:54:08";
+    private static String address = "00:1A:7D:DA:71:11";
     //
 
     @Override
     public void onStart(Intent intent, int startId) {
         super.onStart(intent, startId);
-
+  
         editor = getSharedPreferences("txt", Context.MODE_PRIVATE).edit();
 
         if(initializationBluetooth() == 0) {
@@ -97,15 +98,17 @@ public class TransceiverService extends Service {
             btAdapter.cancelDiscovery();
             btSocket.connect();
             outStream = btSocket.getOutputStream();
+            editor.clear().apply();
             editor.putString("text", "Połączono z serwerem. Zaraz nastąpi transmisja!" + '\r');
             editor.putBoolean("refreshed", true);
-            editor.commit();
+            editor.apply();
             Log.d(TAG, "Connection established and data link opened...");
         }
         catch (IOException e) {
+            editor.clear().apply();
             editor.putString("text", "Nie mogę nawiązać połączenia Bluetooth. MSG: " + e.toString() + '\r');
             editor.putBoolean("refreshed", true);
-            editor.commit();
+            editor.apply();
             try {
                 btSocket.close();
             } catch (IOException e2) {
@@ -145,7 +148,20 @@ public class TransceiverService extends Service {
                     PendingIntent UARTPendingIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
                     usbManager.requestPermission(device, UARTPendingIntent);
                     while(mConnection == null) {
-                        mConnection = usbManager.openDevice(device);
+                        try {
+                            mConnection = usbManager.openDevice(device);
+                        }
+                        catch (SecurityException e)
+                        {
+                            try {
+                                Thread.sleep(100);
+                            }
+                            catch (InterruptedException err)
+                            {
+                                Log.d(TAG, err.toString());
+                            }
+                            Log.d(TAG, "Nadaj uprawnienia USB!");
+                        }
                     }
                     keep = false;
                 }
@@ -161,9 +177,10 @@ public class TransceiverService extends Service {
         }
         if(device == null || mConnection == null)
         {
+            editor.clear().apply();
             editor.putString("text", "Konwerter UART jest niepodłączony" + '\r');
             editor.putBoolean("refreshed", true);
-            editor.commit();
+            editor.apply();
             return 1;
         }
 
@@ -225,13 +242,14 @@ public class TransceiverService extends Service {
             }
             catch (IOException e)
             {
+                editor.clear().apply();
                 editor.putString("text", "Problem z nadawaniem." + e.toString() + '\r');
                 editor.putBoolean("refreshed", true);
-                editor.commit();
+                editor.apply();
             }
             /*editor.putString("text", data + '\r');
             editor.putBoolean("refreshed", true);
-            editor.commit();*/
+            editor.apply();*/
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
@@ -250,14 +268,18 @@ public class TransceiverService extends Service {
         try {
             if (outStream != null)
             {
-                outStream.write("];".getBytes(StandardCharsets.US_ASCII));
+                outStream.write(";".getBytes(StandardCharsets.US_ASCII));
                 outStream.flush();
             }
-            if (btSocket != null) btSocket.close();
+            if (btSocket != null)
+            {
+                btSocket.close();
+                editor.clear().apply();
+                editor.putString("text", "Zakończono transmisję" + '\r');
+                editor.putBoolean("refreshed", true);
+                editor.apply();
+            }
             if (btAdapter != null) btAdapter.disable();
-            editor.putString("text", "Zakończono transmisję" + '\r');
-            editor.putBoolean("refreshed", true);
-            editor.apply();
         }
         catch (IOException e)
         {
