@@ -7,7 +7,6 @@ import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.hardware.usb.UsbDevice;
 import android.hardware.usb.UsbDeviceConnection;
 import android.hardware.usb.UsbManager;
@@ -26,8 +25,6 @@ import java.util.UUID;
 
 public class TransceiverService extends Service {
 
-    SharedPreferences.Editor editor;
-
     // UART
     String TAG = "PL2303HXD_uart_service";
     private static final String ACTION_USB_PERMISSION = "pl.poznan.put.transceiver.transceiver.USB_PERMISSION";
@@ -42,21 +39,16 @@ public class TransceiverService extends Service {
     private BluetoothSocket btSocket = null;
     private OutputStream outStream = null;
     private BluetoothDevice btDevice = null;
-
-    // Well known SPP UUID
     private static final UUID SPP_UUID =
             UUID.fromString("00001101-0000-1000-8000-00805F9B34FB");
 
-    // Insert your server's MAC address
-    //private static String address = "BC:77:37:2F:54:08";
-    private static String address = "00:1A:7D:DA:71:11";
+    //private static String address = "BC:77:37:2F:54:08";   // pc
+    private static String address = "00:1A:7D:DA:71:11"; // odroid
     //
 
     @Override
     public void onStart(Intent intent, int startId) {
         super.onStart(intent, startId);
-  
-        editor = getSharedPreferences("txt", Context.MODE_PRIVATE).edit();
 
         if(initializationBluetooth() == 0) {
             if (initializationUART() == 0) {
@@ -84,9 +76,6 @@ public class TransceiverService extends Service {
                 Log.d(TAG, "Bluetooth is enabled...");
             }
             else {
-                //Prompt user to turn on Bluetooth
-                /*Intent BtIntent = new Intent(BluetoothAdapter.ACTION_REQUEST_ENABLE);
-                startActivity(BtIntent);*/
                 btAdapter.enable();
                 while (!btAdapter.isEnabled()); // waiting for bluetooth
             }
@@ -98,17 +87,10 @@ public class TransceiverService extends Service {
             btAdapter.cancelDiscovery();
             btSocket.connect();
             outStream = btSocket.getOutputStream();
-            editor.clear().apply();
-            editor.putString("text", "Połączono z serwerem. Zaraz nastąpi transmisja!" + '\r');
-            editor.putBoolean("refreshed", true);
-            editor.apply();
-            Log.d(TAG, "Connection established and data link opened...");
+            Log.d(TAG, "Połączono z serwerem. Zaraz nastąpi transmisja!" + '\r');
         }
         catch (IOException e) {
-            editor.clear().apply();
-            editor.putString("text", "Nie mogę nawiązać połączenia Bluetooth. MSG: " + e.toString() + '\r');
-            editor.putBoolean("refreshed", true);
-            editor.apply();
+            Log.d(TAG, "Nie mogę nawiązać połączenia Bluetooth. MSG: " + e.toString() + '\r');
             try {
                 btSocket.close();
             } catch (IOException e2) {
@@ -144,7 +126,7 @@ public class TransceiverService extends Service {
                 int devicePID = device.getProductId();
                 if(deviceVID != 0x1d6b || (devicePID != 0x0001 || devicePID != 0x0002 || devicePID != 0x0003))
                 {
-                    // We are supposing here there is only one device connected and it is our serial device
+
                     PendingIntent UARTPendingIntent = PendingIntent.getBroadcast(this, 0, new Intent(ACTION_USB_PERMISSION), 0);
                     usbManager.requestPermission(device, UARTPendingIntent);
                     while(mConnection == null) {
@@ -177,10 +159,7 @@ public class TransceiverService extends Service {
         }
         if(device == null || mConnection == null)
         {
-            editor.clear().apply();
-            editor.putString("text", "Konwerter UART jest niepodłączony" + '\r');
-            editor.putBoolean("refreshed", true);
-            editor.apply();
+            Log.d(TAG, "Konwerter UART jest niepodłączony" + '\r');
             return 1;
         }
 
@@ -190,8 +169,6 @@ public class TransceiverService extends Service {
         {
             if(uart.open())
             {
-                // Devices are opened with default values, Usually 9600,8,1,None,OFF
-                // CDC driver default values 9600,8,1,None,OFF
                 uart.setBaudRate(9600);
                 uart.setDataBits(UsbSerialInterface.DATA_BITS_8);
                 uart.setStopBits(UsbSerialInterface.STOP_BITS_1);
@@ -229,32 +206,21 @@ public class TransceiverService extends Service {
         @Override
         public void onReceivedData(byte[] arg0)
         {
-            /*String data;
-            try {
-                data = new String(arg0, "UTF-8");
-            }
-            catch (java.io.UnsupportedEncodingException e)
-            {
-                data = e.toString();
-            }*/
+
             try {
                 outStream.write(arg0);
             }
             catch (IOException e)
             {
-                editor.clear().apply();
-                editor.putString("text", "Problem z nadawaniem." + e.toString() + '\r');
-                editor.putBoolean("refreshed", true);
-                editor.apply();
+                Log.d(TAG, "Problem z nadawaniem." + e.toString() + '\r');
             }
-            /*editor.putString("text", data + '\r');
-            editor.putBoolean("refreshed", true);
-            editor.apply();*/
+
             try {
                 Thread.sleep(10);
             } catch (InterruptedException e) {
                 Log.d(TAG, e.toString());
             }
+
         }
     };
 
@@ -274,10 +240,7 @@ public class TransceiverService extends Service {
             if (btSocket != null)
             {
                 btSocket.close();
-                editor.clear().apply();
-                editor.putString("text", "Zakończono transmisję" + '\r');
-                editor.putBoolean("refreshed", true);
-                editor.apply();
+                Log.d(TAG, "Zakończono transmisję" + '\r');
             }
             if (btAdapter != null) btAdapter.disable();
         }

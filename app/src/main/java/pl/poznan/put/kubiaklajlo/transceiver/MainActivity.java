@@ -15,7 +15,6 @@ import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity {
     private Intent intent;
-    Thread updateEditTextThread;
     boolean working;
 
     String TAG = "PL2303HXD_uart_activity";
@@ -27,58 +26,18 @@ public class MainActivity extends AppCompatActivity {
 
         Button StartButton;
         Button StopButton;
-        final EditText EditText;
-        final Activity myActivity = this;
 
         intent = new Intent(getApplicationContext(), TransceiverService.class);
 
         StartButton = (Button) findViewById(R.id.buttonStart);
         StopButton = (Button) findViewById(R.id.buttonStop);
-        EditText = (EditText) findViewById(R.id.editText);
-
-       final Runnable runnableUpdateEditText = new Runnable() {
-            @Override
-            public void run() {
-                final SharedPreferences preferences = getSharedPreferences("txt", Context.MODE_PRIVATE);
-                boolean refreshed;
-                while (working) {
-                    final String text = preferences.getString("text", "");
-                    try {
-                        Thread.sleep(300);
-                    }
-                    catch (InterruptedException e) {
-                        Log.d(TAG, e.toString());
-                    }
-                    boolean tmp = true;
-                    refreshed = preferences.getBoolean("refreshed", tmp);
-                    if(refreshed) {
-                        myActivity.runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                preferences.edit().clear().apply();
-                                preferences.edit().putBoolean("refreshed", false).apply();
-                                EditText.setText(text + EditText.getText());
-                            }
-                        });
-                    }
-                }
-            }
-        };
 
 
         View.OnClickListener Start = new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 if(!working) {
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            EditText.setText("");
-                        }
-                    });
                     startService(intent);
-                    updateEditTextThread = new Thread(runnableUpdateEditText);
-                    updateEditTextThread.start();
                     working = true;
                 }
             }
@@ -87,14 +46,11 @@ public class MainActivity extends AppCompatActivity {
         View.OnClickListener Stop = new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                stopService(intent);
+
                 working = false;
-                try {
-                    updateEditTextThread.join();
-                }
-                catch (InterruptedException e)
+                try
                 {
-                    Log.d(TAG, e.toString());
+                    stopService(intent);
                 }
                 catch (java.lang.NullPointerException e)
                 {
